@@ -20,9 +20,9 @@ func NewArticleHandler(s *service.ArticleService) *ArticleHandler {
 	}
 }
 
-// 追加
+
 func (h *ArticleHandler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")         // URLパラメータからID取得
+	idStr := chi.URLParam(r, "id")        
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "invalid id", http.StatusBadRequest)

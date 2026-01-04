@@ -49,7 +49,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// ルーティング
+	
 	r.Post("/articles/import", h.ImportArticles)
 	r.Get("/articles", h.GetArticles)
 	r.Post("/articles", h.CreateArticle)
