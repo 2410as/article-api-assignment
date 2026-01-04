@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"bytes"
+	"io"
 
 	"intern-article-api/internal/model"
 	"intern-article-api/internal/repository"
@@ -31,32 +33,39 @@ func NewArticleService(repo *repository.ArticleRepository, apiURL string) *Artic
 	return &ArticleService{repo: repo, apiURL: apiURL}
 }
 
-// 外部記事のインポート
 func (s *ArticleService) ImportArticles() error {
-	resp, err := http.Get(s.apiURL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+    resp, err := http.Get(s.apiURL)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
 
-	var externals []externalArticle
-	if err := json.NewDecoder(resp.Body).Decode(&externals); err != nil {
-		return err
-	}
+    b, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return err
+    }
+    fmt.Println("IMPORT status:", resp.Status)
+    fmt.Println("IMPORT body head:", string(b[:min(300, len(b))]))
 
-	for _, e := range externals {
-		article := model.Article{
-			ID:       e.ID,
-			Title:    e.Title,
-			Body:     e.Body,
-			IsPinned: e.IsPinned,
-		}
-		if err := s.repo.Save(&article); err != nil {
-			return err
-		}
-	}
-	return nil
+    var externals []externalArticle
+    if err := json.NewDecoder(bytes.NewReader(b)).Decode(&externals); err != nil {
+        return err
+    }
+
+    for _, e := range externals {
+        article := model.Article{
+            ID:       e.ID,
+            Title:    e.Title,
+            Body:     e.Body,
+            IsPinned: e.IsPinned,
+        }
+        if err := s.repo.Save(&article); err != nil {
+            return err
+        }
+    }
+    return nil
 }
+
 
 func (s *ArticleService) GetArticles() ([]model.Article, error) {
 	return s.repo.FindAll()
@@ -89,3 +98,11 @@ func (s *ArticleService) TogglePin(id int) error {
 	}
 	return fmt.Errorf("article not found")
 }
+
+func min(a, b int) int {
+    if a < b {
+        return a
+    }
+    return b
+}
+

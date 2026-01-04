@@ -1,61 +1,69 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"os"
+    "log"
+    "net/http"
+    "os"
+    "path/filepath"
 
-	"intern-article-api/internal/handler"
-	"intern-article-api/internal/model"
-	"intern-article-api/internal/repository"
-	"intern-article-api/internal/service"
+    "intern-article-api/internal/handler"
+    "intern-article-api/internal/model"
+    "intern-article-api/internal/repository"
+    "intern-article-api/internal/service"
 
-	"github.com/go-chi/cors"
-	"github.com/go-chi/chi/v5"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+    "github.com/go-chi/cors"
+    "github.com/go-chi/chi/v5"
+    "github.com/joho/godotenv"
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
 )
 
+
 func main() {
-	apiURL := os.Getenv("EXTERNAL_API_URL")
-	if apiURL == "" {
-		log.Fatal("EXTERNAL_API_URL is not set")
-	}
+    if err := godotenv.Load(); err != nil {
+        log.Println(".env not found; using environment variables")
+    }
 
-	wd, _ := os.Getwd()
-	dbPath := wd + "/article.db"
-	log.Println("DB PATH:", dbPath)
-	
+    apiURL := os.Getenv("EXTERNAL_API_URL")
+    if apiURL == "" {
+        log.Fatal("EXTERNAL_API_URL is not set")
+    }
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
+    dbPath := "article.db"
+    absDBPath, err := filepath.Abs(dbPath)
+    if err != nil {
+        log.Fatal(err)
+    }
+    log.Println("DB PATH:", absDBPath)
 
-	if err := db.AutoMigrate(&model.Article{}); err != nil {
-		log.Fatal(err)
-	}
+    db, err := gorm.Open(sqlite.Open(absDBPath), &gorm.Config{})
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	repo := repository.NewArticleRepository(db)
-	svc := service.NewArticleService(repo, apiURL)
-	h := handler.NewArticleHandler(svc)
+    if err := db.AutoMigrate(&model.Article{}); err != nil {
+        log.Fatal(err)
+    }
 
-	r := chi.NewRouter()
+    repo := repository.NewArticleRepository(db)
+    svc := service.NewArticleService(repo, apiURL)
+    h := handler.NewArticleHandler(svc)
 
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "http://127.0.0.1:3000"},
-		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		AllowCredentials: true,
-	}))
+    r := chi.NewRouter()
 
-	
-	r.Post("/articles/import", h.ImportArticles)
-	r.Get("/articles", h.GetArticles)
-	r.Post("/articles", h.CreateArticle)
-	r.Patch("/articles/{id}/pin", h.TogglePinArticle)
-	r.Delete("/articles/{id}", h.DeleteArticle) // ← 追加
+    r.Use(cors.Handler(cors.Options{
+        AllowedOrigins:   []string{"http://localhost:3000", "http://127.0.0.1:3000"},
+        AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
+        AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+        AllowCredentials: true,
+    }))
 
-	log.Println("server running on :8080")
-	http.ListenAndServe(":8080", r)
+    r.Post("/articles/import", h.ImportArticles)
+    r.Get("/articles", h.GetArticles)
+    r.Post("/articles", h.CreateArticle)
+    r.Patch("/articles/{id}/pin", h.TogglePinArticle)
+    r.Delete("/articles/{id}", h.DeleteArticle)
+
+    log.Println("server running on :8080")
+    log.Fatal(http.ListenAndServe(":8080", r))
 }
