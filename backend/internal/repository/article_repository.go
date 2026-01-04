@@ -1,10 +1,8 @@
-// DBに関わる処理
 package repository
 
 import (
 	"intern-article-api/internal/model"
 
-	"golang.org/x/tools/go/analysis/passes/errorsas"
 	"gorm.io/gorm"
 )
 
@@ -12,13 +10,20 @@ type ArticleRepository struct {
 	db *gorm.DB
 }
 
+func NewArticleRepository(db *gorm.DB) *ArticleRepository {
+	return &ArticleRepository{db: db}
+}
+
 func (r *ArticleRepository) Save(article *model.Article) error {
-	err := r.db.Save(article).Error
-	return err
+	return r.db.Save(article).Error
 }
 
 func (r *ArticleRepository) FindAll() ([]model.Article, error) {
 	var articles []model.Article
 	err := r.db.Find(&articles).Error
 	return articles, err
+}
+
+func (r *ArticleRepository) Delete(id int) error {
+	return r.db.Delete(&model.Article{}, id).Error
 }
