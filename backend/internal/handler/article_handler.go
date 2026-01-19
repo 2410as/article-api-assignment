@@ -20,9 +20,8 @@ func NewArticleHandler(s *service.ArticleService) *ArticleHandler {
 	}
 }
 
-
 func (h *ArticleHandler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")        
+	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "invalid id", http.StatusBadRequest)
@@ -37,7 +36,6 @@ func (h *ArticleHandler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-
 // GET /articles
 func (h *ArticleHandler) GetArticles(w http.ResponseWriter, r *http.Request) {
 	articles, err := h.service.GetArticles()
@@ -50,7 +48,7 @@ func (h *ArticleHandler) GetArticles(w http.ResponseWriter, r *http.Request) {
 
 // POST /articles
 func (h *ArticleHandler) CreateArticle(w http.ResponseWriter, r *http.Request) {
-	var article service.ArticleInput
+	var article service.SaveArticleInput
 	if err := json.NewDecoder(r.Body).Decode(&article); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
