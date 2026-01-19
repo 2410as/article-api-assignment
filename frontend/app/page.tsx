@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 interface Article {
@@ -7,6 +8,10 @@ interface Article {
   title: string;
   body: string;
   is_pinned: boolean;
+  medias: {
+    id: number
+    content_url: string;
+  }[]
 }
 
 export default function Home() {
@@ -132,6 +137,11 @@ export default function Home() {
               </h1>
               <div className="text-gray-600 leading-relaxed whitespace-pre-wrap">
                 {selectedArticle.body}
+              </div>
+              <div className="flex flex-wrap gap-2 mt-6">
+                {selectedArticle.medias.map(m => {
+                  return (<Image key={m.id} width={200} height={200} alt="Picture of media" src={m.content_url} />)
+                })}
               </div>
             </div>
           ) : (
